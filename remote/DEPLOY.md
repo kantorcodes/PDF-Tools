@@ -32,14 +32,22 @@ allocation, documentation that matches, and a reproducible deploy.
 3. Keep the explicit `vercel.json` includes for remote worker/shared engine
    files and native canvas/PDF.js assets. Inspect the deployed artifact and
    exercise actual worker dispatch, not just `tools/list`.
-4. Create a preview without promoting production, then verify `initialize`:
+4. Create a preview without promoting production, then check modern MCP
+   discovery (2026-07-28). This revision uses `server/discover`, not the
+   legacy `initialize` handshake:
 
-   ```
+   ```bash
    curl -s -X POST <preview>/api/mcp \
      -H 'content-type: application/json' \
      -H 'accept: application/json, text/event-stream' \
-     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2026-07-28","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+     -H 'MCP-Protocol-Version: 2026-07-28' \
+     -H 'Mcp-Method: server/discover' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
    ```
+
+   Confirm the response advertises the expected protocol version and server
+   identity before running the tool checks. This documents the wire contract;
+   it does not replace testing the deployed preview.
 
 5. Preserve the existing domain `mcp.opendocuments.ai` and its routing. A
    production promotion is a separate milestone. Route `/mcp` to the function:
